@@ -20,7 +20,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Email already registered" }, { status: 409 });
   }
 
-  const { passwordHash, passwordSalt } = hashPassword(password);
+  const { passwordHash, passwordSalt } = await hashPassword(password);
   const user = await db.user.create({
     data: { email, passwordHash, passwordSalt },
   });

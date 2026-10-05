@@ -1,22 +1,24 @@
-import { createHmac, randomBytes, scryptSync, timingSafeEqual } from "crypto";
+import { createHmac, randomBytes, scrypt, timingSafeEqual } from "crypto";
+import { promisify } from "util";
 import { cookies } from "next/headers";
 import { env } from "~/env";
 import { db } from "~/server/db";
 
+const scryptAsync = promisify(scrypt);
 const SESSION_COOKIE = "session";
 
-export function hashPassword(password: string) {
+export async function hashPassword(password: string) {
   const passwordSalt = randomBytes(16).toString("hex");
-  const passwordHash = scryptSync(password, passwordSalt, 64).toString("hex");
-  return { passwordHash, passwordSalt };
+  const hash = (await scryptAsync(password, passwordSalt, 64)) as Buffer;
+  return { passwordHash: hash.toString("hex"), passwordSalt };
 }
 
-export function verifyPassword(
+export async function verifyPassword(
   password: string,
   passwordHash: string,
   passwordSalt: string,
 ) {
-  const candidate = scryptSync(password, passwordSalt, 64);
+  const candidate = (await scryptAsync(password, passwordSalt, 64)) as Buffer;
   const stored = Buffer.from(passwordHash, "hex");
   return (
     candidate.length === stored.length && timingSafeEqual(candidate, stored)

@@ -39,10 +39,29 @@ function login() {
   );
 }
 
+// scrypt hashing on every login is expensive — log in once per VU and
+// reuse the session cookie k6 already keeps per VU across iterations.
+const loggedInVUs = new Set();
+function ensureLoggedIn() {
+  if (!loggedInVUs.has(__VU)) {
+    login();
+    loggedInVUs.add(__VU);
+  }
+}
+
+// Pick a product deterministically per VU so cart-mutating scenarios
+// (post/patch/delete), which share the same demo account, don't race
+// each other on the same cart row.
+// ponytail: naive VU%length split, revisit with per-VU users if product
+// count ever shrinks below the concurrent VU count.
+function vuProductId(products) {
+  if (!Array.isArray(products) || products.length === 0) return null;
+  return products[__VU % products.length].id;
+}
+
 function firstProductId() {
   const res = http.get(`${BASE_URL}/api/products`);
-  const products = res.json();
-  return Array.isArray(products) && products.length > 0 ? products[0].id : null;
+  return vuProductId(res.json());
 }
 
 // GET /api/products
@@ -89,14 +108,14 @@ export function authLogout() {
 
 // GET /api/cart
 export function cartGet() {
-  login();
+  ensureLoggedIn();
   const res = http.get(`${BASE_URL}/api/cart`);
   check(res, { "cart get 200": (r) => r.status === 200 });
 }
 
 // POST /api/cart
 export function cartPost() {
-  login();
+  ensureLoggedIn();
   const id = firstProductId();
   if (!id) return;
   const res = http.post(
@@ -109,7 +128,7 @@ export function cartPost() {
 
 // PATCH /api/cart/:productId
 export function cartPatch() {
-  login();
+  ensureLoggedIn();
   const id = firstProductId();
   if (!id) return;
   http.post(
@@ -127,7 +146,7 @@ export function cartPatch() {
 
 // DELETE /api/cart/:productId
 export function cartDelete() {
-  login();
+  ensureLoggedIn();
   const id = firstProductId();
   if (!id) return;
   http.post(

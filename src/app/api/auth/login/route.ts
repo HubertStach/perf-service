@@ -16,7 +16,7 @@ export async function POST(req: Request) {
   const { email, password } = parsed.data;
 
   const user = await db.user.findUnique({ where: { email } });
-  if (!user || !verifyPassword(password, user.passwordHash, user.passwordSalt)) {
+  if (!user || !(await verifyPassword(password, user.passwordHash, user.passwordSalt))) {
     return NextResponse.json({ error: "Invalid email or password" }, { status: 401 });
   }
 
