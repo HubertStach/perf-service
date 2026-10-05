@@ -32,7 +32,7 @@ export const options = {
 };
 
 function login() {
-  http.post(
+  return http.post(
     `${BASE_URL}/api/auth/login`,
     JSON.stringify({ email: EMAIL, password: PASSWORD }),
     { headers: { "Content-Type": "application/json" } },
@@ -41,12 +41,12 @@ function login() {
 
 // scrypt hashing on every login is expensive — log in once per VU and
 // reuse the session cookie k6 already keeps per VU across iterations.
+// Only cache success — a failed attempt must retry next iteration.
 const loggedInVUs = new Set();
 function ensureLoggedIn() {
-  if (!loggedInVUs.has(__VU)) {
-    login();
-    loggedInVUs.add(__VU);
-  }
+  if (loggedInVUs.has(__VU)) return;
+  const res = login();
+  if (res.status === 200) loggedInVUs.add(__VU);
 }
 
 // Pick a product deterministically per VU so cart-mutating scenarios

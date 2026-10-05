@@ -20,7 +20,7 @@ services:
     ports:
       - "3000:3000"
     environment:
-      DATABASE_URL: postgresql://postgres:password@db:5432/perf-service
+      DATABASE_URL: postgresql://postgres:password@db:5432/perf-service?connection_limit=20&pool_timeout=20
       SESSION_SECRET: ${SESSION_SECRET:-change-me-to-a-random-string}
     depends_on:
       db:
