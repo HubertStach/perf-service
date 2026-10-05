@@ -1,0 +1,47 @@
+name: Performance Test
+on:
+  push:
+    branches:
+      - main
+      - 'release/*'
+      - 'feature/*'
+
+jobs:
+  perftest:
+    name: Performance Test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build and start app
+        run: docker compose up -d --build
+
+      - name: Wait for app to be ready
+        run: |
+          for i in $(seq 1 30); do
+            curl -sf http://localhost:3000/api/products && exit 0
+            sleep 2
+          done
+          echo "App did not become ready in time" >&2
+          exit 1
+
+      - name: Run performance tests
+        run: docker run --rm --network host -v "$PWD/perftest:/bzt-configs" blazemeter/taurus bzt bzt.yml
+
+      - name: Cleanup test users
+        if: always()
+        run: node perftest/cleanup.ts
+        env:
+          DATABASE_URL: postgresql://postgres:password@localhost:5432/perf-service
+
+      - name: Stop app
+        if: always()
+        run: docker compose down

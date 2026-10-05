@@ -1,0 +1,9 @@
+execution:
+- executor: k6
+  concurrency: 100
+  hold-for: 1m
+  scenario: simple
+
+scenarios:
+  simple: 
+    script: k6.js
