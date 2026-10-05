@@ -11,7 +11,20 @@ do testów wydajnościowych i obserwowalności. Szczegóły decyzji projektowych
 - Auth: własna implementacja na `node:crypto` (hash hasła `scrypt`, podpisane cookie sesji) —
   bez NextAuth/zewnętrznych bibliotek
 
-## Uruchomienie
+## Uruchomienie (Docker)
+
+Najprostszy sposób — stawia bazę i aplikację razem:
+
+```bash
+docker compose up --build
+```
+
+Aplikacja wystartuje na `http://localhost:3000`, baza na `localhost:5432`. Kontener aplikacji przy
+starcie sam robi `prisma db push` i (jeśli baza jest pusta) seed — restart nie czyści danych, patrz
+`FORCE_SEED=1` w `prisma/seed.ts` żeby wymusić reset. Konto demo: `demo@example.com` /
+`password123`.
+
+## Uruchomienie (lokalnie, bez Dockera)
 
 ```bash
 ./start-database.sh        # lub: docker run -d --name perf-service-postgres \

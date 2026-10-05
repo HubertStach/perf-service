@@ -21,6 +21,12 @@ function hashPassword(password: string) {
 }
 
 async function main() {
+  const existing = await db.product.count();
+  if (existing > 0 && !process.env.FORCE_SEED) {
+    console.log("Database already seeded, skipping (set FORCE_SEED=1 to force).");
+    return;
+  }
+
   await db.cartItem.deleteMany();
   await db.product.deleteMany();
   await db.user.deleteMany();
