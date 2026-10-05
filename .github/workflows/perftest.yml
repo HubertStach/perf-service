@@ -34,7 +34,7 @@ jobs:
           exit 1
 
       - name: Run performance tests
-        run: docker run --rm --network host -v "$PWD/perftest:/bzt-configs" blazemeter/taurus bzt bzt.yml
+        run: docker run --rm --network host -v "$PWD/perftest:/scripts" grafana/k6 run /scripts/k6.js
 
       - name: Cleanup test users
         if: always()
